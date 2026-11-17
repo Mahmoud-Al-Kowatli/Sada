@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sada
+      POSTGRES_PASSWORD: sada
+      POSTGRES_DB: sada
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U sada"], interval: 5s, retries: 10 }
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  ai:
+    build: ./ai-service
+    environment:
+      SADA_AI_CLASSIFIER: stub
+    ports: ["8100:8100"]
+    volumes: ["ai_var:/app/var"]
+
+  backend:
+    build: ./backend
+    environment:
+      SADA_DATABASE_URL: postgresql+psycopg://sada:sada@postgres:5432/sada
+      SADA_REDIS_URL: redis://redis:6379/0
+      SADA_AI_SERVICE_URL: http://ai:8100
+      SADA_JWT_SECRET: dev-only-secret-change-me-before-any-deployment-0123456789
+      SADA_OTP_DEV_ECHO: "true"
+      SADA_EVIDENCE_DIR: /app/var/evidence
+      SADA_CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      ai: { condition: service_started }
+    volumes: ["evidence:/app/var"]
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_PROXY: http://backend:8000
+    ports: ["5173:5173"]
+    depends_on: [backend]
+
+volumes:
+  pgdata:
+  evidence:
+  ai_var:
