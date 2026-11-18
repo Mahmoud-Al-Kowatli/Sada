@@ -1,0 +1,25 @@
+"""initial schema (all ERD tables)
+
+Revision ID: 0001_initial
+Revises:
+Create Date: 2026-11-16
+"""
+from alembic import op
+
+from app.core.db import Base
+import app.models  # noqa: F401
+
+revision = "0001_initial"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    # First revision: create every table from the ORM metadata. Later schema changes must be
+    # generated with `alembic revision --autogenerate -m "..."` so they are explicit diffs.
+    Base.metadata.create_all(bind=op.get_bind())
+
+
+def downgrade() -> None:
+    Base.metadata.drop_all(bind=op.get_bind())
