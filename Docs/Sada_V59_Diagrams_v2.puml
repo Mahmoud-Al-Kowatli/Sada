@@ -1,0 +1,793 @@
+@startuml Sada_Use_Case
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+actor Customer
+actor "Review Employee" as Reviewer
+actor "System Administrator" as Admin
+actor "AI Researcher" as Researcher
+actor "Sada AI Service" as AI
+rectangle "Sada Digital Banking Platform" {
+ package "Customer Services" {
+  usecase "Register Customer Account" as Register
+  usecase "Open Bank Account" as OpenAccount
+  usecase "Authenticate User Session" as Auth
+  usecase "View Account Summary" as View
+  usecase "Execute Internal Transfer" as UC1
+  usecase "Verify OTP Challenge" as OTP
+  usecase "Check Available Balance" as Balance
+  usecase "Check Daily Transfer Limit" as Limit
+  usecase "Evaluate Transaction Risk" as Risk
+  usecase "Post Double-Entry Ledger" as Post
+  usecase "Hold Suspicious Transaction" as Hold
+  usecase "Open Review Case" as OpenCase
+  usecase "Submit Sensitive Support Request" as UC2
+  usecase "Create Support Ticket" as Ticket
+  usecase "Attach Voice Recording" as Attach
+ }
+ package "Audio Assessment" {
+  usecase "Analyze Audio Recording" as UC3
+  usecase "Validate Audio File" as Validate
+  usecase "Assess Audio Quality" as Quality
+  usecase "Preprocess Audio Signal" as Prep
+  usecase "Compute Spoof Score" as Score
+  usecase "Store Assessment Metadata" as Metadata
+  usecase "Delete AI Scratch File" as Scratch
+  usecase "Evaluate Audio Risk" as AudioRisk
+ }
+ package "Case and Ledger Operations" {
+  usecase "Review Suspicious Case" as UC4
+  usecase "Inspect Case Details" as Inspect
+  usecase "Listen to Retained Recording" as Listen
+  usecase "Record Review Decision" as Decision
+  usecase "Complete Held Transfer" as Complete
+  usecase "Cancel Held Transfer" as Cancel
+  usecase "Reverse Ledger Transaction" as Reverse
+  usecase "Append Audit Event" as Audit
+ }
+ package "Administration and Research" {
+  usecase "Manage User Accounts" as Users
+  usecase "Assign User Role" as Roles
+  usecase "Configure Risk Threshold" as Threshold
+  usecase "Configure Transfer Limit" as TransferLimit
+  usecase "View Audit Log" as AuditView
+  usecase "Export Evaluation Metrics" as Metrics
+ }
+}
+Customer -- Register
+Customer -- OpenAccount
+Customer -- View
+Customer -- UC1
+Customer -- UC2
+Reviewer -- UC4
+Reviewer -- Reverse
+Admin -- Users
+Admin -- Roles
+Admin -- Threshold
+Admin -- TransferLimit
+Admin -- AuditView
+Researcher -- Metrics
+UC1 ..> Auth : <<include>>
+UC1 ..> OTP : <<include>>
+UC1 ..> Balance : <<include>>
+UC1 ..> Limit : <<include>>
+UC1 ..> Risk : <<include>>
+Post ..> UC1 : <<extend>>\n[ risk decision = PASS ]
+Hold ..> UC1 : <<extend>>\n[ manual review required ]
+Hold ..> OpenCase : <<include>>
+Post ..> Audit : <<include>>
+Hold ..> Audit : <<include>>
+UC2 ..> Auth : <<include>>
+UC2 ..> Ticket : <<include>>
+UC2 ..> Attach : <<include>>
+UC2 ..> UC3 : <<include>>
+UC3 ..> Validate : <<include>>
+UC3 ..> Quality : <<include>>
+UC3 ..> Prep : <<include>>
+UC3 ..> Score : <<include>>
+UC3 ..> Metadata : <<include>>
+UC3 ..> Scratch : <<include>>
+UC2 ..> AudioRisk : <<include>>
+OpenCase ..> AudioRisk : <<extend>>\n[ risk policy requires review ]
+AI -- UC3
+UC4 ..> Auth : <<include>>
+UC4 ..> Inspect : <<include>>
+Listen ..> Inspect : <<extend>>\n[ retained recording available ]
+UC4 ..> Decision : <<include>>
+Complete ..> Decision : <<extend>>\n[ accepted case contains held transfer ]
+Cancel ..> Decision : <<extend>>\n[ rejected case contains held transfer ]
+Decision ..> Audit : <<include>>
+Complete ..> Audit : <<include>>
+Cancel ..> Audit : <<include>>
+Reverse ..> Audit : <<include>>
+note right of UC3
+The platform invokes Sada AI.
+The spoof score is an auxiliary risk signal.
+AI unavailability does not stop banking services.
+end note
+note bottom of Post
+A held transfer is not posted.
+Posting occurs only after PASS or human approval.
+end note
+@enduml
+
+
+
+@startuml Sada_Activity_UC01
+title UC-01 — Execute Internal Transfer
+skinparam shadowing false
+start
+:Customer enters destination account and amount;
+:Submit transfer request;
+:Authenticate customer session;
+if (Session valid?) then (Yes)
+ :Verify simulated OTP challenge;
+ if (OTP valid?) then (Yes)
+  :Check source account status;
+  if (Account active?) then (Yes)
+   :Check available balance;
+   if (Sufficient balance?) then (Yes)
+    :Check daily transfer limit;
+    if (Limit not exceeded?) then (Yes)
+     :Evaluate transaction risk rules;
+     if (Manual review required?) then (Yes)
+      :Begin database transaction;
+      :Lock source account and recheck balance;
+      :Move amount from available to frozen balance;
+      :Create transfer with HELD status;
+      :Open linked review case;
+      :Append audit event;
+      :Commit transaction;
+      :Notify customer that transfer is pending review;
+     else (No)
+      :Begin atomic database transaction;
+      :Lock source and destination accounts;
+      :Recheck available balance;
+      :Create balanced debit and credit ledger entries;
+      :Post ledger transaction;
+      :Update account balances;
+      :Create transfer with COMPLETED status;
+      :Append audit event;
+      :Commit transaction;
+      :Display transfer receipt;
+     endif
+    else (No)
+     :Reject transfer because daily limit is exceeded;
+     :Append rejection audit event;
+    endif
+   else (No)
+    :Reject transfer because funds are insufficient;
+    :Append rejection audit event;
+   endif
+  else (No)
+   :Reject transfer because source account is inactive;
+   :Append rejection audit event;
+  endif
+ else (No)
+  :Reject transfer because OTP is invalid;
+  :Append failed OTP audit event;
+ endif
+else (No)
+ :Reject unauthenticated request;
+ :Append authentication failure audit event;
+endif
+stop
+@enduml
+
+@startuml Sada_Activity_UC02
+title UC-02 — Submit Sensitive Support Request
+skinparam shadowing false
+start
+:Customer selects sensitive request type;
+:Enter request details and attach voice recording;
+:Authenticate customer session;
+if (Session valid?) then (Yes)
+ :Validate audio extension, size and file header;
+ if (Audio file accepted?) then (Yes)
+  :Create support ticket linked to customer and account;
+  :Store encrypted retained review copy;
+  :Send audio payload to Sada AI;
+  if (AI assessment available?) then (Yes)
+   :Receive spoof score and quality status;
+   :Evaluate result using platform Risk Engine;
+   if (Manual review required?) then (Yes)
+    :Suspend sensitive operation;
+    :Open review case linked to ticket;
+    :Set ticket status to PENDING_REVIEW;
+   else (No)
+    :Set ticket status to SUBMITTED;
+    :Route ticket to standard support workflow;
+   endif
+  else (No)
+   :Mark AI assessment as UNAVAILABLE;
+   :Apply non-AI risk rules;
+   if (Manual review required?) then (Yes)
+    :Open review case linked to ticket;
+    :Set ticket status to PENDING_REVIEW;
+   else (No)
+    :Set ticket status to SUBMITTED;
+   endif
+  endif
+  :Append audit event;
+  :Return ticket reference and status;
+ else (No)
+  :Reject unsupported or oversized audio file;
+ endif
+else (No)
+ :Reject unauthenticated request;
+endif
+stop
+@enduml
+
+@startuml Sada_Activity_UC03
+title UC-03 — Analyze Audio Recording
+skinparam shadowing false
+start
+:Receive assessment request from Sada Platform;
+:Create temporary AI scratch file;
+:Validate file header and integrity;
+if (File is readable and supported?) then (Yes)
+ :Measure duration, silence ratio and clipping;
+ if (Audio quality sufficient?) then (Yes)
+  :Convert signal to mono 16 kHz;
+  :Normalize signal amplitude;
+  :Segment audio into configured analysis windows;
+  :Run deepfake classifier on audio windows;
+  :Aggregate window scores into final spoof score;
+  :Load calibrated decision threshold;
+  :Store assessment and traceability metadata;
+  :Delete temporary AI scratch file;
+  :Return score, quality status and metadata;
+ else (No)
+  :Store INSUFFICIENT_QUALITY assessment;
+  :Delete temporary AI scratch file;
+  :Return insufficient-quality status;
+ endif
+else (No)
+ :Store validation failure metadata;
+ :Delete scratch file if created;
+ :Return invalid-audio error;
+endif
+stop
+@enduml
+
+@startuml Sada_Activity_UC04
+title UC-04 — Review Suspicious Case
+skinparam shadowing false
+start
+:Reviewer authenticates to staff dashboard;
+:Open review case queue;
+:Select an OPEN case;
+:Claim case and set status to IN_REVIEW;
+:Load customer, transfer or ticket details;
+:Display triggered rules and assessment metadata;
+if (Retained audio copy available?) then (Yes)
+ :Reviewer listens to retained recording;
+else (No)
+ :Display audio unavailable notice;
+endif
+:Reviewer evaluates available evidence;
+:Enter decision rationale;
+if (Reviewer accepts case?) then (Accept)
+ :Begin atomic database transaction;
+ :Set case status to ACCEPTED;
+ if (Case contains held transfer?) then (Yes)
+  :Release frozen amount for settlement;
+  :Lock source and destination accounts;
+  :Post balanced debit and credit entries;
+  :Update account balances;
+  :Set transfer status to COMPLETED;
+ else (No)
+  :Approve sensitive support request;
+ endif
+ :Append immutable audit event;
+ :Commit transaction;
+else (Reject)
+ :Begin atomic database transaction;
+ :Set case status to REJECTED;
+ if (Case contains held transfer?) then (Yes)
+  :Cancel held transfer;
+  :Restore frozen amount to available balance;
+ else (No)
+  :Reject sensitive support request;
+ endif
+ :Append immutable audit event;
+ :Commit transaction;
+endif
+:Delete retained audio copy according to retention policy;
+:Record reviewer, rationale and decision timestamp;
+:Notify customer;
+stop
+@enduml
+
+@startuml Sada_Sequence_UC01
+title UC-01 — Execute Internal Transfer
+autonumber
+skinparam shadowing false
+actor Customer
+boundary "Customer Web App" as UI
+control "Banking API" as API
+control "Authentication Service" as Auth
+control "OTP Service" as OTP
+control "Risk Engine" as Risk
+control "Ledger Service" as Ledger
+database "Platform Database" as DB
+Customer -> UI: Enter destination account and amount
+UI -> API: Submit transfer request
+activate API
+API -> Auth: Validate session
+activate Auth
+Auth -> DB: Read session
+DB --> Auth: Session status
+Auth --> API: Authentication result
+deactivate Auth
+alt Session invalid
+ API --> UI: 401 Unauthorized
+ UI --> Customer: Display authentication error
+else Session valid
+ API -> OTP: Verify simulated OTP
+ activate OTP
+ OTP -> DB: Validate OTP challenge
+ DB --> OTP: OTP status
+ OTP --> API: Verification result
+ deactivate OTP
+ alt OTP invalid
+  API --> UI: 401 Invalid OTP
+  UI --> Customer: Display OTP error
+ else OTP valid
+  API -> DB: Read account status, available balance and daily total
+  DB --> API: Account and limit data
+  alt Account inactive
+   API --> UI: 422 Account unavailable
+  else Account active
+   alt Insufficient balance
+    API --> UI: 422 Insufficient balance
+   else Sufficient balance
+    alt Daily limit exceeded
+     API --> UI: 422 Daily limit exceeded
+    else Limit passed
+     API -> Risk: Evaluate transaction rules
+     activate Risk
+     Risk --> API: PASS or MANUAL_REVIEW
+     deactivate Risk
+     alt Manual review required
+      API -> DB: BEGIN transaction
+      API -> DB: Lock source account and recheck balance
+      API -> DB: Freeze amount and create HELD transfer
+      API -> DB: Create linked REVIEW_CASE
+      API -> DB: Append AUDIT_LOG event
+      API -> DB: COMMIT
+      API --> UI: 202 Accepted — Pending review
+     else Risk passed
+      API -> Ledger: Execute atomic internal transfer
+      activate Ledger
+      Ledger -> DB: BEGIN transaction and lock both accounts
+      Ledger -> DB: Recheck available balance
+      Ledger -> DB: Insert balanced debit and credit entries
+      Ledger -> DB: Update account balances
+      Ledger -> DB: Insert completed TRANSFER
+      Ledger -> DB: Append AUDIT_LOG event
+      Ledger -> DB: COMMIT
+      Ledger --> API: Transfer receipt
+      deactivate Ledger
+      API --> UI: 200 OK — Transfer completed
+     end
+    end
+   end
+  end
+ end
+end
+deactivate API
+@enduml
+
+@startuml Sada_Sequence_UC02
+title UC-02 — Submit Sensitive Support Request
+autonumber
+skinparam shadowing false
+actor Customer
+boundary "Customer Web App" as UI
+control "Banking API" as API
+control "Authentication Service" as Auth
+collections "Evidence Storage" as Storage
+control "Sada AI Service" as AI
+control "Risk Engine" as Risk
+database "Platform Database" as DB
+Customer -> UI: Enter request details and attach voice recording
+UI -> API: Submit sensitive support request
+activate API
+API -> Auth: Validate customer session
+activate Auth
+Auth --> API: Authentication result
+deactivate Auth
+alt Session invalid
+ API --> UI: 401 Unauthorized
+else Session valid
+ API -> API: Validate audio extension, size and header
+ alt Audio file invalid
+  API --> UI: 400 Invalid audio file
+ else Audio file valid
+  API -> DB: Create SUPPORT_TICKET and AUDIO_FILE metadata
+  DB --> API: ticket_id and audio_id
+  API -> Storage: Store encrypted retained review copy
+  activate Storage
+  Storage --> API: Review storage reference
+  deactivate Storage
+  API -> AI: Request audio assessment
+  activate AI
+  alt AI assessment available
+   AI --> API: Spoof score, quality status and model metadata
+  else AI unavailable
+   AI --> API: Timeout or service unavailable
+  end
+  deactivate AI
+  alt Assessment available
+   API -> Risk: Evaluate banking rules and audio result
+   activate Risk
+   Risk --> API: Risk decision
+   deactivate Risk
+   alt Manual review required
+    API -> DB: Create REVIEW_CASE linked to ticket
+    API -> DB: Set ticket status PENDING_REVIEW
+   else Standard handling
+    API -> DB: Set ticket status SUBMITTED
+   end
+  else Assessment unavailable
+   API -> Risk: Evaluate non-AI banking rules
+   activate Risk
+   Risk --> API: Risk decision
+   deactivate Risk
+   alt Manual review required
+    API -> DB: Create REVIEW_CASE linked to ticket
+    API -> DB: Set ticket status PENDING_REVIEW
+   else Standard handling
+    API -> DB: Set ticket status SUBMITTED
+   end
+  end
+  API -> DB: Append AUDIT_LOG event
+  API --> UI: 201 Created — ticket reference and status
+ end
+end
+deactivate API
+@enduml
+
+@startuml Sada_Sequence_UC03
+title UC-03 — Analyze Audio Recording
+autonumber
+skinparam shadowing false
+control "Sada Banking Platform" as Platform
+control "Sada AI Controller" as AI
+collections "AI Scratch Storage" as Scratch
+control "Audio Preprocessor" as Prep
+control "Deepfake Classifier" as Model
+database "Assessment Database" as DB
+Platform -> AI: Submit audio payload and assessment reference
+activate AI
+AI -> Scratch: Write temporary scratch file
+activate Scratch
+Scratch --> AI: Scratch file reference
+deactivate Scratch
+AI -> Prep: Validate file and assess quality
+activate Prep
+Prep --> AI: Validity and quality result
+deactivate Prep
+alt Unsupported or corrupted file
+ AI -> DB: Store validation failure metadata
+ DB --> AI: Failure record ID
+ AI -> Scratch: Delete scratch file
+ activate Scratch
+ Scratch --> AI: Deletion result
+ deactivate Scratch
+ AI --> Platform: Invalid audio result
+else File valid
+ alt Audio quality insufficient
+  AI -> DB: Store insufficient-quality assessment
+  DB --> AI: Assessment ID
+  AI -> Scratch: Delete scratch file
+  activate Scratch
+  Scratch --> AI: Deletion result
+  deactivate Scratch
+  AI --> Platform: INSUFFICIENT_QUALITY result
+ else Audio quality sufficient
+  AI -> Prep: Convert to mono 16 kHz and normalize
+  activate Prep
+  Prep --> AI: Normalized signal
+  AI -> Prep: Segment signal into configured windows
+  Prep --> AI: Audio windows
+  deactivate Prep
+  AI -> Model: Compute window-level spoof scores
+  activate Model
+  Model --> AI: Window-level scores
+  AI -> AI: Aggregate scores and apply calibrated threshold
+  deactivate Model
+  AI -> DB: Store score, threshold and traceability metadata
+  DB --> AI: Assessment ID
+  AI -> Scratch: Delete scratch file
+  activate Scratch
+  Scratch --> AI: Deletion result
+  deactivate Scratch
+  AI --> Platform: Assessment ID, score and quality status
+ end
+end
+deactivate AI
+note over Platform,AI
+The retained review copy stays in Evidence Storage.
+Only the separate AI scratch copy is deleted after processing.
+end note
+@enduml
+
+@startuml Sada_Sequence_UC04
+title UC-04 — Review Suspicious Case
+autonumber
+skinparam shadowing false
+actor "Review Employee" as Reviewer
+boundary "Staff Review Dashboard" as UI
+control "Banking API" as API
+control "Case Management Service" as CaseSvc
+control "Ledger Service" as Ledger
+collections "Evidence Storage" as Storage
+database "Platform Database" as DB
+Reviewer -> UI: Open review queue
+UI -> API: Request OPEN cases
+activate API
+API -> CaseSvc: Retrieve open cases
+activate CaseSvc
+CaseSvc -> DB: Query REVIEW_CASE
+DB --> CaseSvc: Open case list
+CaseSvc --> API: Case list
+deactivate CaseSvc
+API --> UI: Case list
+deactivate API
+UI --> Reviewer: Display review queue
+Reviewer -> UI: Select case
+UI -> API: Request case details
+activate API
+API -> CaseSvc: Load case evidence
+activate CaseSvc
+CaseSvc -> DB: Read case, ticket, transfer and assessment
+DB --> CaseSvc: Case details
+CaseSvc --> API: Case details
+deactivate CaseSvc
+API --> UI: Case details and risk indicators
+deactivate API
+UI --> Reviewer: Display evidence
+opt Retained audio copy available
+ Reviewer -> UI: Request audio playback
+ UI -> API: Request authorized audio stream
+ activate API
+ API -> Storage: Read retained review copy
+ activate Storage
+ Storage --> API: Audio stream
+ deactivate Storage
+ API --> UI: Audio stream
+ deactivate API
+ UI --> Reviewer: Play recording
+end
+Reviewer -> UI: Submit decision and rationale
+UI -> API: Submit case decision
+activate API
+API -> CaseSvc: Process decision
+activate CaseSvc
+alt Decision accepted
+ CaseSvc -> DB: BEGIN transaction
+ CaseSvc -> DB: Set case ACCEPTED and save rationale
+ opt Case contains held transfer
+  CaseSvc -> Ledger: Complete held transfer
+  activate Ledger
+  Ledger -> DB: Lock accounts and validate frozen amount
+  Ledger -> DB: Post balanced debit and credit entries
+  Ledger -> DB: Update balances and transfer status
+  DB --> Ledger: Posting result
+  Ledger --> CaseSvc: Transfer completed
+  deactivate Ledger
+ end
+ CaseSvc -> DB: Append audit event
+ CaseSvc -> DB: COMMIT
+else Decision rejected
+ CaseSvc -> DB: BEGIN transaction
+ CaseSvc -> DB: Set case REJECTED and save rationale
+ opt Case contains held transfer
+  CaseSvc -> Ledger: Cancel held transfer
+  activate Ledger
+  Ledger -> DB: Lock source account
+  Ledger -> DB: Restore frozen amount to available balance
+  Ledger -> DB: Set transfer status CANCELLED
+  DB --> Ledger: Cancellation result
+  Ledger --> CaseSvc: Transfer cancelled
+  deactivate Ledger
+ end
+ CaseSvc -> DB: Append audit event
+ CaseSvc -> DB: COMMIT
+end
+CaseSvc -> Storage: Delete retained audio under retention policy
+activate Storage
+Storage --> CaseSvc: Deletion result
+deactivate Storage
+CaseSvc -> DB: Record audio deletion timestamp
+CaseSvc --> API: Final case status
+deactivate CaseSvc
+API --> UI: Decision confirmation
+deactivate API
+UI --> Reviewer: Display final decision
+@enduml
+
+@startuml Sada_ERD
+title Sada Digital Banking Platform — ERD
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+entity "USER" as User {
+ * user_id : UUID <<PK>>
+ --
+ * full_name : varchar(120)
+ * email : varchar(150) <<UQ>>
+ * password_hash : varchar(255)
+ * status : varchar(20)
+ * created_at : timestamp
+}
+entity "ROLE" as Role {
+ * role_id : int <<PK>>
+ --
+ * role_name : varchar(40) <<UQ>>
+}
+entity "USER_ROLE" as UserRole {
+ * user_id : UUID <<PK, FK>>
+ * role_id : int <<PK, FK>>
+ --
+ * assigned_at : timestamp
+}
+entity "BANK_ACCOUNT" as Account {
+ * account_id : UUID <<PK>>
+ --
+ * customer_id : UUID <<FK, UQ>>
+ * account_number : varchar(34) <<UQ>>
+ * currency : char(3)
+ * available_balance : decimal(18,2)
+ * frozen_balance : decimal(18,2)
+ * daily_limit : decimal(18,2)
+ * status : varchar(20)
+ * created_at : timestamp
+}
+entity "TRANSFER" as Transfer {
+ * transfer_id : UUID <<PK>>
+ --
+ * source_account_id : UUID <<FK>>
+ * destination_account_id : UUID <<FK>>
+ * initiated_by : UUID <<FK>>
+ * amount : decimal(18,2)
+ * status : varchar(20)
+ * created_at : timestamp
+ * completed_at : timestamp nullable
+}
+entity "LEDGER_TRANSACTION" as LedgerTx {
+ * ledger_tx_id : UUID <<PK>>
+ --
+ transfer_id : UUID <<FK, nullable>>
+ reversal_of_id : UUID <<FK, nullable>>
+ * transaction_type : varchar(30)
+ * status : varchar(20)
+ * created_at : timestamp
+ posted_at : timestamp nullable
+}
+entity "LEDGER_ENTRY" as Entry {
+ * entry_id : UUID <<PK>>
+ --
+ * ledger_tx_id : UUID <<FK>>
+ * account_id : UUID <<FK>>
+ * entry_type : varchar(10)
+ * amount : decimal(18,2)
+ * created_at : timestamp
+}
+entity "SUPPORT_TICKET" as Ticket {
+ * ticket_id : UUID <<PK>>
+ --
+ * customer_id : UUID <<FK>>
+ * account_id : UUID <<FK>>
+ related_transfer_id : UUID <<FK, nullable>>
+ * request_type : varchar(50)
+ * description : text
+ * status : varchar(30)
+ * created_at : timestamp
+}
+entity "AUDIO_FILE" as Audio {
+ * audio_id : UUID <<PK>>
+ --
+ * ticket_id : UUID <<FK>>
+ * storage_reference : varchar(500)
+ * file_format : varchar(10)
+ * file_size_bytes : bigint
+ * review_copy_status : varchar(20)
+ retention_expires_at : timestamp nullable
+ deleted_at : timestamp nullable
+ * created_at : timestamp
+}
+entity "AUDIO_ASSESSMENT" as Assessment {
+ * assessment_id : UUID <<PK>>
+ --
+ * audio_id : UUID <<FK>>
+ * status : varchar(30)
+ spoof_score : decimal(5,4) nullable
+ threshold : decimal(5,4) nullable
+ quality_status : varchar(30)
+ model_version : varchar(80)
+ processing_time_ms : int
+ * assessed_at : timestamp
+}
+entity "REVIEW_CASE" as ReviewCase {
+ * case_id : UUID <<PK>>
+ --
+ ticket_id : UUID <<FK, nullable>>
+ transfer_id : UUID <<FK, nullable>>
+ * status : varchar(20)
+ * triggered_rules : text
+ assigned_reviewer_id : UUID <<FK, nullable>>
+ decision : varchar(20) nullable
+ decision_rationale : text nullable
+ reviewed_at : timestamp nullable
+ * created_at : timestamp
+}
+entity "OTP_CHALLENGE" as OTP {
+ * otp_id : UUID <<PK>>
+ --
+ * user_id : UUID <<FK>>
+ * challenge_hash : varchar(255)
+ * expires_at : timestamp
+ * status : varchar(20)
+ * created_at : timestamp
+}
+entity "SYSTEM_SETTING" as Setting {
+ * setting_id : UUID <<PK>>
+ --
+ * setting_key : varchar(100) <<UQ>>
+ * setting_value : varchar(255)
+ * updated_by : UUID <<FK>>
+ * updated_at : timestamp
+}
+entity "AUDIT_LOG" as Audit {
+ * audit_id : UUID <<PK>>
+ --
+ actor_user_id : UUID <<FK, nullable>>
+ * event_type : varchar(80)
+ * entity_type : varchar(40)
+ * entity_id : UUID
+ * event_details : text
+ * created_at : timestamp
+}
+User ||--o| Account : owns
+User ||--o{ UserRole : assigned
+Role ||--o{ UserRole : grants
+User ||--o{ OTP : receives
+User ||--o{ Transfer : initiates
+User ||--o{ Ticket : submits
+User |o--o{ ReviewCase : reviews
+Account ||--o{ Transfer : source
+Account ||--o{ Transfer : destination
+Account ||--o{ Entry : records
+Transfer |o--o| LedgerTx : posts
+LedgerTx ||--|{ Entry : contains
+LedgerTx |o--o{ LedgerTx : reverses
+Account ||--o{ Ticket : concerns
+Transfer |o--o{ Ticket : related_to
+Ticket ||--o{ Audio : attaches
+Audio ||--o{ Assessment : assessed_by
+Ticket |o--o{ ReviewCase : may_create
+Transfer |o--o{ ReviewCase : may_create
+User ||--o{ Setting : updates
+User |o--o{ Audit : performs
+note right of ReviewCase
+At least one of ticket_id or transfer_id is required.
+Enforce with a database CHECK constraint.
+A case may reference both when appropriate.
+end note
+note bottom of Audio
+AUDIO_FILE represents the retained review copy.
+AI scratch storage is separate and temporary.
+Delete retained evidence under the retention policy.
+end note
+note bottom of LedgerTx
+Posted transactions are immutable.
+Corrections use a new reversing transaction
+referencing reversal_of_id.
+end note
+@enduml
