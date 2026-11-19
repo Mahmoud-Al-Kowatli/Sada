@@ -1,0 +1,872 @@
+' ============================================================
+' SADA DIGITAL BANKING PLATFORM
+' Core Use Case, Activity, System Sequence (SSD), ERD & Class Diagrams
+' Based on Sada Project Proposal V59
+'
+' IMPORTANT:
+' This file contains 11 separate PlantUML diagrams.
+' In draw.io, paste ONE complete @startuml ... @enduml block
+' at a time into Arrange > Insert > Advanced > PlantUML.
+' Core scope only. Live WebRTC, external webhooks, multi-currency,
+' cards, loans, deposits and heatmaps are intentionally excluded.
+' ============================================================
+
+' -------------------- 1. USE CASE DIAGRAM --------------------
+@startuml Sada_Use_Case
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam usecase {
+  BackgroundColor #F7FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam actor {
+  BackgroundColor #F1F5F9
+  BorderColor #334155
+}
+
+actor Customer
+actor "Support / Review Employee" as Reviewer
+actor "System Administrator" as Admin
+actor "Sada AI Service" as AI
+
+rectangle "Sada Digital Banking Platform" {
+  usecase "UC-01\nExecute Internal Transfer" as UC1
+  usecase "Authenticate User" as Auth
+  usecase "Verify OTP" as OTP
+  usecase "Check Transfer Limits" as Limits
+  usecase "Apply Risk Rules" as Risk
+  usecase "Post Double-Entry Ledger" as Ledger
+  usecase "Freeze / Hold Transaction" as Hold
+  usecase "Open Review Case" as OpenCase
+
+  usecase "UC-02\nSubmit Sensitive Support Request" as UC2
+  usecase "Create Support Ticket" as Ticket
+  usecase "Record / Upload Audio" as AudioUpload
+  usecase "Request Audio Assessment" as RequestAI
+
+  usecase "UC-03\nAnalyze Audio" as UC3
+  usecase "Validate Audio File" as ValidateAudio
+  usecase "Normalize Audio" as Normalize
+  usecase "Run Deepfake Detection" as Inference
+  usecase "Store Traceable Assessment" as StoreAssessment
+  usecase "Delete Temporary Audio" as DeleteAudio
+
+  usecase "UC-04\nReview Suspicious Case" as UC4
+  usecase "Inspect Request and Evidence" as Inspect
+  usecase "Listen to Audio" as Listen
+  usecase "Accept or Reject Case" as Decide
+  usecase "Record Audit Event" as Audit
+
+  usecase "Manage Users and Roles" as ManageUsers
+  usecase "Configure Risk Thresholds\nand Transfer Limits" as Configure
+  usecase "View Audit Log and Reports" as Reports
+}
+
+Customer --> UC1
+Customer --> UC2
+Reviewer --> UC4
+Admin --> ManageUsers
+Admin --> Configure
+Admin --> Reports
+AI --> UC3
+
+UC1 .> Auth : <<include>>
+UC1 .> OTP : <<include>>
+UC1 .> Limits : <<include>>
+UC1 .> Risk : <<include>>
+UC1 .> Ledger : <<include>>
+Risk .> Hold : <<extend>>\n[review required]
+Hold .> OpenCase : <<include>>
+
+UC2 .> Auth : <<include>>
+UC2 .> Ticket : <<include>>
+UC2 .> AudioUpload : <<include>>
+UC2 .> RequestAI : <<include>>
+RequestAI .> UC3 : <<include>>
+
+UC3 .> ValidateAudio : <<include>>
+UC3 .> Normalize : <<include>>
+UC3 .> Inference : <<include>>
+UC3 .> StoreAssessment : <<include>>
+UC3 .> DeleteAudio : <<include>>
+
+UC4 .> Auth : <<include>>
+UC4 .> Inspect : <<include>>
+UC4 .> Listen : <<include>>
+UC4 .> Decide : <<include>>
+UC4 .> Audit : <<include>>
+@enduml
+
+' -------------------- 2. ACTIVITY: UC-01 --------------------
+@startuml Sada_Activity_UC01
+title UC-01 — Execute Internal Transfer
+skinparam shadowing false
+skinparam defaultFontName Arial
+start
+:Customer enters recipient and amount;
+:Submit transfer request;
+:Authenticate customer;
+if (Credentials valid?) then (Yes)
+  :Verify simulated OTP;
+  if (OTP valid?) then (Yes)
+    :Check account status and available balance;
+    :Check daily transfer limit;
+    if (All checks passed?) then (Yes)
+      :Evaluate basic risk rules;
+      if (Risk requires manual review?) then (Yes)
+        :Place transaction on temporary hold;
+        :Freeze relevant amount;
+        :Create review case;
+        :Record audit event;
+        :Notify customer that review is pending;
+      else (No)
+        :Begin atomic database transaction;
+        :Create balanced debit and credit entries;
+        :Post ledger transaction;
+        :Update account balances;
+        :Commit database transaction;
+        :Record audit event;
+        :Display transfer confirmation;
+      endif
+    else (No)
+      :Reject transfer request;
+      :Return limit / balance / account error;
+    endif
+  else (No)
+    :Reject OTP verification;
+  endif
+else (No)
+  :Reject authentication;
+endif
+stop
+@enduml
+
+' -------------------- 3. ACTIVITY: UC-02 --------------------
+@startuml Sada_Activity_UC02
+title UC-02 — Submit Sensitive Support Request
+skinparam shadowing false
+skinparam defaultFontName Arial
+start
+:Customer selects a sensitive request;
+:Enter request details;
+:Authenticate customer;
+if (Authorized?) then (Yes)
+  :Create support ticket linked to customer account;
+  :Record or upload audio file;
+  :Validate file type, format and size;
+  if (Audio file accepted?) then (Yes)
+    :Attach audio file to support ticket;
+    :Send audio to Sada AI;
+    :Set ticket status to Submitted / Processing;
+    :Return ticket reference to customer;
+  else (No)
+    :Show audio validation error;
+    :Allow customer to provide a valid file;
+  endif
+else (No)
+  :Reject request;
+endif
+stop
+@enduml
+
+' -------------------- 4. ACTIVITY: UC-03 --------------------
+@startuml Sada_Activity_UC03
+title UC-03 — Analyze Audio
+skinparam shadowing false
+skinparam defaultFontName Arial
+start
+:Receive audio assessment request;
+:Load temporary audio file;
+:Validate WAV / FLAC format and file integrity;
+if (File valid?) then (Yes)
+  :Check duration and audio quality;
+  if (Quality sufficient?) then (Yes)
+    :Convert to mono, 16 kHz;
+    :Run configured deepfake detection model;
+    :Calculate spoof score;
+    :Record model version, threshold,\nquality, score and processing time;
+    :Return assessment to Sada Platform;
+    :Delete temporary audio file;
+    :Record cleanup result;
+  else (No)
+    :Set quality status to Insufficient;
+    :Do not report a reliable spoof assessment;
+    :Return quality outcome to Sada Platform;
+    :Delete temporary audio file;
+  endif
+else (No)
+  :Return invalid / unsupported audio error;
+  :Record processing outcome;
+  :Delete temporary audio file if stored;
+endif
+stop
+@enduml
+
+' -------------------- 5. ACTIVITY: UC-04 --------------------
+@startuml Sada_Activity_UC04
+title UC-04 — Review Suspicious Case
+skinparam shadowing false
+skinparam defaultFontName Arial
+start
+:Reviewer opens case queue;
+:Select an open case;
+:Authenticate and authorize reviewer;
+:Load customer, transaction / ticket details;
+:Display risk indicators and audio assessment;
+if (Audio evidence available?) then (Yes)
+  :Reviewer listens to attached recording;
+else (No)
+  :Display audio unavailable / insufficient quality;
+endif
+:Reviewer evaluates all available evidence;
+if (Request approved?) then (Accept)
+  :Set case status to Accepted;
+  :Release held transaction / approve request;
+else (Reject)
+  :Set case status to Rejected;
+  :Keep transaction rejected / held as applicable;
+endif
+:Record reviewer, decision, timestamp and rationale;
+:Write immutable audit event;
+:Notify customer of final decision;
+stop
+@enduml
+
+' -------------------- 6. SYSTEM SEQUENCE (SSD): UC-01 --------------------
+@startuml Sada_Sequence_UC01
+title UC-01 — Execute Internal Transfer (System Sequence Diagram)
+autonumber
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequence {
+  ActorBorderColor #334155
+  ParticipantBorderColor #334155
+  ParticipantBackgroundColor #F8FAFC
+  LifeLineBorderColor #64748B
+  ArrowColor #334155
+}
+
+actor Customer
+participant "Sada Platform" as System
+
+Customer -> System: submitInternalTransfer(destinationAccount, amount)
+System --> Customer: promptOTPChallenge()
+Customer -> System: submitOTP(otpCode)
+System -> System: authenticateSession(), verifyOTP(),\ncheckBalanceAndDailyLimit(), evaluateRiskRules()
+
+alt Authentication, OTP, balance, or limit check fails
+  System --> Customer: returnError(reason)
+else Risk decision == PASS
+  System -> System: postDoubleEntryLedger(),\nupdateBalances(), recordAuditEvent()
+  System --> Customer: returnTransferReceipt(transferId, status="COMPLETED")
+else Manual review required
+  System -> System: freezeAmount(), createHeldTransfer(),\nopenReviewCase(), recordAuditEvent()
+  System --> Customer: returnPendingReview(transferId, caseId, status="HELD")
+end
+@enduml
+
+' -------------------- 7. SYSTEM SEQUENCE (SSD): UC-02 --------------------
+@startuml Sada_Sequence_UC02
+title UC-02 — Submit Sensitive Support Request (System Sequence Diagram)
+autonumber
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequence {
+  ActorBorderColor #334155
+  ParticipantBorderColor #334155
+  ParticipantBackgroundColor #F8FAFC
+  LifeLineBorderColor #64748B
+  ArrowColor #334155
+}
+
+actor Customer
+participant "Sada Platform" as System
+participant "Sada AI Service" as AI
+
+Customer -> System: submitSensitiveSupportRequest(requestType, details, voiceRecording)
+System -> System: authenticateCustomer(),\nvalidateAudioFile(type, size, header)
+
+alt Authentication or audio validation fails
+  System --> Customer: returnValidationError(reason)
+else Valid request and audio
+  System -> System: createSupportTicket(),\nstoreEncryptedReviewCopy()
+  System -> AI: analyzeAudioRecording(ticketId, audioPayload)
+
+  alt Sada AI responds with assessment
+    AI --> System: returnAssessment(spoofScore, qualityStatus, modelVersion)
+    System -> System: evaluateRiskRules(assessment)
+  else Sada AI unavailable or times out
+    System -> System: markAssessmentUnavailable(),\napplyNonAIRiskRules()
+  end
+
+  alt Risk policy requires human review
+    System -> System: suspendOperation(),\nopenReviewCase(status="PENDING_REVIEW")
+  else Standard support handling
+    System -> System: routeToStandardSupport(status="SUBMITTED")
+  end
+
+  System -> System: recordAuditEvent()
+  System --> Customer: returnTicketReference(ticketId, status)
+end
+@enduml
+
+' -------------------- 8. SYSTEM SEQUENCE (SSD): UC-03 --------------------
+@startuml Sada_Sequence_UC03
+title UC-03 — Analyze Audio Recording (System Sequence Diagram)
+autonumber
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequence {
+  ActorBorderColor #334155
+  ParticipantBorderColor #334155
+  ParticipantBackgroundColor #F8FAFC
+  LifeLineBorderColor #64748B
+  ArrowColor #334155
+}
+
+participant "Sada Platform" as Platform
+participant "Sada AI Service" as AI
+
+Platform -> AI: requestAudioAssessment(ticketId, audioPayload)
+AI -> AI: writeTemporaryScratchCopy(),\nvalidateHeaderAndIntegrity()
+
+alt File is corrupted or unsupported
+  AI -> AI: recordValidationFailure(),\ndeleteScratchCopy()
+  AI --> Platform: returnInvalidAudioResult(status="INVALID_AUDIO")
+else File is valid
+  AI -> AI: measureQualityIndicators(duration, silenceRatio, clipping)
+
+  alt Audio quality is insufficient
+    AI -> AI: storeInsufficientQualityAssessment(),\ndeleteScratchCopy()
+    AI --> Platform: returnQualityOutcome(status="INSUFFICIENT_QUALITY")
+  else Audio quality is sufficient
+    AI -> AI: convertToMono16kHz(), normalizeAndSegment(),\nrunDeepfakeClassifier(), aggregateSpoofScore()
+    AI -> AI: storeAssessmentMetadata(spoofScore, threshold,\nmodelVersion, processingTime), deleteScratchCopy()
+    AI --> Platform: returnAssessmentResult(spoofScore, qualityStatus, modelVersion)
+  end
+end
+@enduml
+
+' -------------------- 9. SYSTEM SEQUENCE (SSD): UC-04 --------------------
+@startuml Sada_Sequence_UC04
+title UC-04 — Review Suspicious Case (System Sequence Diagram)
+autonumber
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequence {
+  ActorBorderColor #334155
+  ParticipantBorderColor #334155
+  ParticipantBackgroundColor #F8FAFC
+  LifeLineBorderColor #64748B
+  ArrowColor #334155
+}
+
+actor "Review Employee" as Reviewer
+participant "Sada Platform" as System
+
+Reviewer -> System: openReviewQueue()
+System --> Reviewer: displayOpenCases(caseList)
+
+Reviewer -> System: selectCase(caseId)
+System -> System: authenticateReviewer(), claimCase(status="IN_REVIEW"),\nloadLinkedEvidence()
+System --> Reviewer: displayCaseDetails(customer, requestOrTransfer,\nriskIndicators, audioAssessment)
+
+opt Retained audio recording is available
+  Reviewer -> System: requestRetainedRecording(caseId)
+  System --> Reviewer: streamAudioRecording()
+end
+
+Reviewer -> System: submitReviewDecision(caseId, decision, rationale)
+System -> System: validateDecisionAndRationale()
+
+alt Decision == ACCEPT
+  System -> System: markCaseAccepted(),\npostHeldTransferOrApproveRequest()
+else Decision == REJECT
+  System -> System: markCaseRejected(),\ncancelHeldTransferAndUnfreezeOrRejectRequest()
+end
+
+System -> System: appendImmutableAuditEvent(),\napplyRetentionDeletionPolicy(), notifyCustomer()
+System --> Reviewer: confirmDecisionRecorded(caseId, finalStatus)
+@enduml
+
+' -------------------- 10. ERD --------------------
+@startuml Sada_ERD
+title Sada Digital Banking Platform — Entity Relationship Diagram
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+entity "USER" as User {
+  * user_id : UUID <<PK>>
+  --
+  full_name : varchar
+  email : varchar <<UQ>>
+  password_hash : varchar
+  status : varchar
+  created_at : timestamp
+}
+
+entity "ROLE" as Role {
+  * role_id : int <<PK>>
+  --
+  role_name : varchar <<UQ>>
+}
+
+entity "USER_ROLE" as UserRole {
+  * user_id : UUID <<PK, FK>>
+  * role_id : int <<PK, FK>>
+}
+
+entity "BANK_ACCOUNT" as Account {
+  * account_id : UUID <<PK>>
+  --
+  customer_id : UUID <<FK>>
+  account_number : varchar <<UQ>>
+  currency : char(3)
+  available_balance : decimal
+  frozen_balance : decimal
+  status : varchar
+  created_at : timestamp
+}
+
+entity "TRANSFER" as Transfer {
+  * transfer_id : UUID <<PK>>
+  --
+  source_account_id : UUID <<FK>>
+  destination_account_id : UUID <<FK>>
+  initiated_by : UUID <<FK>>
+  amount : decimal
+  status : varchar
+  created_at : timestamp
+}
+
+entity "LEDGER_TRANSACTION" as LedgerTx {
+  * ledger_tx_id : UUID <<PK>>
+  --
+  transfer_id : UUID <<FK, nullable>>
+  transaction_type : varchar
+  status : varchar
+  posted_at : timestamp
+  reversal_of_id : UUID <<FK, nullable>>
+}
+
+entity "LEDGER_ENTRY" as Entry {
+  * entry_id : UUID <<PK>>
+  --
+  ledger_tx_id : UUID <<FK>>
+  account_id : UUID <<FK>>
+  entry_type : varchar
+  amount : decimal
+  created_at : timestamp
+}
+
+entity "SUPPORT_TICKET" as Ticket {
+  * ticket_id : UUID <<PK>>
+  --
+  customer_id : UUID <<FK>>
+  account_id : UUID <<FK>>
+  request_type : varchar
+  description : text
+  status : varchar
+  created_at : timestamp
+}
+
+entity "AUDIO_FILE" as Audio {
+  * audio_id : UUID <<PK>>
+  --
+  ticket_id : UUID <<FK>>
+  storage_reference : varchar
+  format : varchar
+  duration_seconds : decimal
+  quality_status : varchar
+  uploaded_at : timestamp
+  deleted_at : timestamp
+}
+
+entity "AUDIO_ASSESSMENT" as Assessment {
+  * assessment_id : UUID <<PK>>
+  --
+  audio_id : UUID <<FK>>
+  spoof_score : decimal
+  threshold : decimal
+  quality_status : varchar
+  model_version : varchar
+  processing_time_ms : int
+  assessment_status : varchar
+  created_at : timestamp
+}
+
+entity "REVIEW_CASE" as ReviewCase {
+  * case_id : UUID <<PK>>
+  --
+  ticket_id : UUID <<FK, nullable>>
+  transfer_id : UUID <<FK, nullable>>
+  assigned_reviewer_id : UUID <<FK, nullable>>
+  status : varchar
+  risk_score : decimal
+  decision : varchar
+  decision_rationale : text
+  created_at : timestamp
+  reviewed_at : timestamp
+}
+
+entity "OTP_CHALLENGE" as OTP {
+  * otp_id : UUID <<PK>>
+  --
+  user_id : UUID <<FK>>
+  purpose : varchar
+  expires_at : timestamp
+  verified_at : timestamp
+  status : varchar
+}
+
+entity "SYSTEM_SETTING" as Setting {
+  * setting_id : UUID <<PK>>
+  --
+  setting_key : varchar <<UQ>>
+  setting_value : varchar
+  updated_by : UUID <<FK>>
+  updated_at : timestamp
+}
+
+entity "AUDIT_LOG" as Audit {
+  * audit_id : UUID <<PK>>
+  --
+  actor_user_id : UUID <<FK, nullable>>
+  action : varchar
+  entity_type : varchar
+  entity_id : UUID
+  details : text
+  created_at : timestamp
+}
+
+User ||--o{ UserRole
+Role ||--o{ UserRole
+User ||--o{ Account : owns
+Account ||--o{ Transfer : source
+Account ||--o{ Transfer : destination
+User ||--o{ Transfer : initiates
+Transfer ||--o| LedgerTx : posts
+LedgerTx ||--|{ Entry : contains
+Account ||--o{ Entry : receives
+LedgerTx |o--o| LedgerTx : reverses
+User ||--o{ Ticket : opens
+Account ||--o{ Ticket : relates to
+Ticket ||--o{ Audio : attaches
+Audio ||--o{ Assessment : assessed by
+Ticket ||--o{ ReviewCase : may create
+Transfer ||--o{ ReviewCase : may create
+User |o--o{ ReviewCase : reviews
+User ||--o{ OTP : receives
+User |o--o{ Setting : updates
+User |o--o{ Audit : performs
+@enduml
+
+' -------------------- 11. CLASS DIAGRAM --------------------
+@startuml Sada_Class_Diagram
+title Sada Digital Banking Platform — Domain & Service Class Diagram
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam enum {
+  BackgroundColor #F1F5F9
+  BorderColor #334155
+}
+
+package "Enumerations" {
+  enum RoleName {
+    CUSTOMER
+    REVIEW_EMPLOYEE
+    SYSTEM_ADMIN
+  }
+
+  enum TransferStatus {
+    PENDING
+    HELD
+    COMPLETED
+    CANCELLED
+    REJECTED
+  }
+
+  enum EntryType {
+    DEBIT
+    CREDIT
+  }
+
+  enum TicketStatus {
+    SUBMITTED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+  }
+
+  enum AudioQualityStatus {
+    SUFFICIENT
+    INSUFFICIENT_QUALITY
+    INVALID_AUDIO
+  }
+
+  enum AssessmentStatus {
+    COMPLETED
+    FAILED
+    UNAVAILABLE
+  }
+
+  enum CaseStatus {
+    OPEN
+    IN_REVIEW
+    ACCEPTED
+    REJECTED
+  }
+}
+
+package "Sada Platform — Domain Model" {
+  class User {
+    +userId : UUID
+    +fullName : String
+    +email : String
+    -passwordHash : String
+    +status : String
+    +createdAt : DateTime
+    +hasRole(role : RoleName) : Boolean
+  }
+
+  class Role {
+    +roleId : int
+    +roleName : RoleName
+  }
+
+  class BankAccount {
+    +accountId : UUID
+    +accountNumber : String
+    +currency : String
+    +availableBalance : Decimal
+    +frozenBalance : Decimal
+    +dailyLimit : Decimal
+    +status : String
+    +freezeAmount(amount : Decimal) : void
+    +unfreezeAmount(amount : Decimal) : void
+    +debit(amount : Decimal) : void
+    +credit(amount : Decimal) : void
+  }
+
+  class Transfer {
+    +transferId : UUID
+    +amount : Decimal
+    +status : TransferStatus
+    +createdAt : DateTime
+    +completedAt : DateTime
+    +markHeld() : void
+    +markCompleted() : void
+    +markCancelled() : void
+  }
+
+  class LedgerTransaction {
+    +ledgerTxId : UUID
+    +transactionType : String
+    +status : String
+    +postedAt : DateTime
+    +reversalOfId : UUID
+    +isBalanced() : Boolean
+  }
+
+  class LedgerEntry {
+    +entryId : UUID
+    +entryType : EntryType
+    +amount : Decimal
+    +createdAt : DateTime
+  }
+
+  class OtpChallenge {
+    +otpId : UUID
+    +purpose : String
+    +expiresAt : DateTime
+    +verifiedAt : DateTime
+    +status : String
+    +verify(code : String) : Boolean
+  }
+
+  class SupportTicket {
+    +ticketId : UUID
+    +requestType : String
+    +description : String
+    +status : TicketStatus
+    +createdAt : DateTime
+    +updateStatus(status : TicketStatus) : void
+  }
+
+  class AudioFile {
+    +audioId : UUID
+    +storageReference : String
+    +format : String
+    +sizeBytes : long
+    +durationSeconds : Decimal
+    +reviewCopyStatus : String
+    +retentionExpiresAt : DateTime
+    +deletedAt : DateTime
+    +markDeleted() : void
+  }
+
+  class AudioAssessment {
+    +assessmentId : UUID
+    +spoofScore : Decimal
+    +threshold : Decimal
+    +qualityStatus : AudioQualityStatus
+    +modelVersion : String
+    +processingTimeMs : int
+    +assessmentStatus : AssessmentStatus
+    +createdAt : DateTime
+    +isSuspicious() : Boolean
+  }
+
+  class ReviewCase {
+    +caseId : UUID
+    +status : CaseStatus
+    +triggeredRules : String
+    +riskScore : Decimal
+    +decision : String
+    +decisionRationale : String
+    +createdAt : DateTime
+    +reviewedAt : DateTime
+    +claim(reviewerId : UUID) : void
+    +recordDecision(decision : String, rationale : String) : void
+  }
+
+  class SystemSetting {
+    +settingId : UUID
+    +settingKey : String
+    +settingValue : String
+    +updatedAt : DateTime
+  }
+
+  class AuditLog {
+    +auditId : UUID
+    +action : String
+    +entityType : String
+    +entityId : UUID
+    +details : String
+    +createdAt : DateTime
+  }
+}
+
+package "Sada Platform — Application Services" {
+  class AuthService {
+    +authenticate(email : String, password : String) : SessionToken
+    +generateOtp(userId : UUID, purpose : String) : OtpChallenge
+    +verifyOtp(userId : UUID, code : String) : Boolean
+  }
+
+  class TransferService {
+    +executeInternalTransfer(sourceId : UUID, destId : UUID, amount : Decimal, otpCode : String) : Transfer
+    +releaseHeldTransfer(transferId : UUID) : void
+    +cancelHeldTransfer(transferId : UUID) : void
+  }
+
+  class LedgerService {
+    +postDoubleEntry(transfer : Transfer) : LedgerTransaction
+    +reverseTransaction(ledgerTxId : UUID, reason : String) : LedgerTransaction
+  }
+
+  class RiskEngine {
+    +evaluateTransferRisk(transfer : Transfer, account : BankAccount) : RiskDecision
+    +evaluateSupportRisk(ticket : SupportTicket, assessment : AudioAssessment) : RiskDecision
+  }
+
+  class SupportTicketService {
+    +submitSensitiveRequest(customerId : UUID, accountId : UUID, type : String, audio : Binary) : SupportTicket
+  }
+
+  class CaseManagementService {
+    +listOpenCases() : List<ReviewCase>
+    +getCaseDetails(caseId : UUID) : ReviewCase
+    +submitDecision(caseId : UUID, reviewerId : UUID, decision : String, rationale : String) : ReviewCase
+  }
+
+  class AuditService {
+    +appendEvent(actorId : UUID, action : String, entityType : String, entityId : UUID, details : String) : AuditLog
+  }
+
+  class SadaAIServiceClient {
+    +requestAssessment(ticketId : UUID, audioBytes : Binary) : AudioAssessment
+  }
+}
+
+package "Sada AI Microservice" {
+  class AudioAssessmentAPI {
+    +analyzeAudio(ticketId : UUID, file : Binary) : AssessmentResponse
+  }
+
+  class AudioValidator {
+    +validateHeaderAndFormat(filePath : String) : Boolean
+    +assessQuality(filePath : String) : AudioQualityStatus
+  }
+
+  class AudioPreprocessor {
+    +convertToMono16kHz(filePath : String) : Signal
+    +segmentWindows(signal : Signal, windowSec : float) : List<Window>
+  }
+
+  class DeepfakeClassifier {
+    +modelVersion : String
+    +threshold : Decimal
+    +predictSpoofScore(windows : List<Window>) : Decimal
+  }
+}
+
+' Domain Relationships
+User "1" -- "1..*" Role : has >
+User "1" *-- "0..*" BankAccount : owns >
+User "1" -- "0..*" OtpChallenge : receives >
+User "1" -- "0..*" AuditLog : triggers >
+User "1" -- "0..*" SystemSetting : updates >
+
+BankAccount "1" -- "0..*" Transfer : source/dest >
+Transfer "1" -- "0..1" LedgerTransaction : posts >
+LedgerTransaction "1" *-- "2..*" LedgerEntry : contains >
+BankAccount "1" -- "0..*" LedgerEntry : records >
+LedgerTransaction "0..1" -- "0..1" LedgerTransaction : reverses >
+
+User "1" -- "0..*" SupportTicket : submits >
+BankAccount "1" -- "0..*" SupportTicket : relates to >
+SupportTicket "1" *-- "0..*" AudioFile : attaches >
+AudioFile "1" *-- "0..*" AudioAssessment : evaluated by >
+
+SupportTicket "0..1" -- "0..*" ReviewCase : escalates to >
+Transfer "0..1" -- "0..*" ReviewCase : escalates to >
+User "0..1" -- "0..*" ReviewCase : assigned to >
+
+' Service Dependencies
+TransferService ..> AuthService : uses
+TransferService ..> RiskEngine : evaluates with
+TransferService ..> LedgerService : posts via
+TransferService ..> CaseManagementService : opens case
+TransferService ..> AuditService : logs via
+
+SupportTicketService ..> AuthService : uses
+SupportTicketService ..> SadaAIServiceClient : requests assessment
+SupportTicketService ..> RiskEngine : evaluates with
+SupportTicketService ..> CaseManagementService : opens case
+SupportTicketService ..> AuditService : logs via
+
+CaseManagementService ..> LedgerService : releases/cancels via
+CaseManagementService ..> AuditService : logs via
+
+SadaAIServiceClient ..> AudioAssessmentAPI : HTTP/REST
+AudioAssessmentAPI ..> AudioValidator : validates with
+AudioAssessmentAPI ..> AudioPreprocessor : preprocesses with
+AudioAssessmentAPI ..> DeepfakeClassifier : infers with
+@enduml
