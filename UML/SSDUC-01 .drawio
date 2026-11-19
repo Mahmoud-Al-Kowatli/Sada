@@ -1,0 +1,204 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="gGwM5OHuQJ2tLo40dFEi">
+    <mxGraphModel dx="2034" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" plantUmlData="{&#xa;  &quot;data&quot;: &quot;&#39; -------------------- 6. SYSTEM SEQUENCE (SSD): UC-01 --------------------\n@startuml Sada_Sequence_UC01\ntitle UC-01 — Execute Internal Transfer (System Sequence Diagram)\nautonumber\nskinparam shadowing false\nskinparam defaultFontName Arial\nskinparam sequence {\n  ActorBorderColor #334155\n  ParticipantBorderColor #334155\n  ParticipantBackgroundColor #F8FAFC\n  LifeLineBorderColor #64748B\n  ArrowColor #334155\n}\n\nactor Customer\nparticipant \&quot;Sada Platform\&quot; as System\n\nCustomer -&gt; System: submitInternalTransfer(destinationAccount, amount)\nSystem --&gt; Customer: promptOTPChallenge()\nCustomer -&gt; System: submitOTP(otpCode)\nSystem -&gt; System: authenticateSession(), verifyOTP(),\\ncheckBalanceAndDailyLimit(), evaluateRiskRules()\n\nalt Authentication, OTP, balance, or limit check fails\n  System --&gt; Customer: returnError(reason)\nelse Risk decision == PASS\n  System -&gt; System: postDoubleEntryLedger(),\\nupdateBalances(), recordAuditEvent()\n  System --&gt; Customer: returnTransferReceipt(transferId, status=\&quot;COMPLETED\&quot;)\nelse Manual review required\n  System -&gt; System: freezeAmount(), createHeldTransfer(),\\nopenReviewCase(), recordAuditEvent()\n  System --&gt; Customer: returnPendingReview(transferId, caseId, status=\&quot;HELD\&quot;)\nend\n@enduml\n&quot;,&#xa;  &quot;config&quot;: null&#xa;}" id="TgTziPrXvUSxa3XX-cSn-1">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10 380 10 10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="pl_0" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;participant=headless;size=75.49;lifelineMirror=1;dashPattern=5 5;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=none;strokeColor=#64748B;strokeWidth=0.5;fontFamily=Arial;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-67">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;participant=headless;size=75.49;lifelineMirror=1;dashPattern=5 5;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=none;strokeColor=#64748B;strokeWidth=0.5;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="580.93" width="65.9462" x="-3" y="60.95" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Customer" plantUmlId="p_21" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;spacingTop=-5;fillColor=#E2E2F0;strokeColor=#334155;fontColor=#000000;fontSize=14;html=1;shadow=0;fontFamily=Arial;part=1;" plantUmlBaseValue="Customer" id="TgTziPrXvUSxa3XX-cSn-68">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-67" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;spacingTop=-5;fillColor=#E2E2F0;strokeColor=#334155;fontColor=#000000;fontSize=14;html=1;shadow=0;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="58" width="26" x="19.973100000000002" y="0.5" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Customer" plantUmlId="pf_22" plantUmlBaseStyle="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;spacingBottom=-2.5;fillColor=#E2E2F0;strokeColor=#334155;fontColor=#000000;fontSize=14;html=1;shadow=0;fontFamily=Arial;part=1;" plantUmlBaseValue="Customer" id="TgTziPrXvUSxa3XX-cSn-69">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-67" style="shape=umlActor;verticalLabelPosition=top;verticalAlign=bottom;spacingBottom=-2.5;fillColor=#E2E2F0;strokeColor=#334155;fontColor=#000000;fontSize=14;html=1;shadow=0;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="58" width="26" x="19.973100000000002" y="522.43" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Sada Platform" plantUmlId="p_1" plantUmlBaseStyle="shape=umlLifeline;perimeter=lifelinePerimeter;size=30.49;lifelineMirror=1;dashPattern=5 5;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#F8FAFC;strokeColor=#334155;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;shadow=0;fontFamily=Arial;" plantUmlBaseValue="Sada Platform" id="TgTziPrXvUSxa3XX-cSn-70">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-1" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=30.49;lifelineMirror=1;dashPattern=5 5;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};rounded=1;absoluteArcSize=1;arcSize=5;fillColor=#F8FAFC;strokeColor=#334155;strokeWidth=0.5;fontColor=#000000;fontSize=14;whiteSpace=wrap;html=1;shadow=0;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="490.92999999999995" width="107.5428" x="364.0713499999998" y="105.95" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="grpframe_2" plantUmlBaseStyle="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;shadow=0;fontFamily=Arial;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-71">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-1" style="rounded=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;shadow=0;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="250.4" width="700.790757142857" x="-13" y="299.99" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="alt" plantUmlId="grptab_3" plantUmlBaseStyle="rounded=0;fillColor=#EEEEEE;strokeColor=#000000;strokeWidth=1.5;fontColor=#000000;fontSize=13;fontStyle=1;align=left;spacingLeft=13;verticalAlign=middle;html=1;shadow=0;fontFamily=Arial;part=1;" plantUmlBaseValue="alt" id="TgTziPrXvUSxa3XX-cSn-72">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-71" style="rounded=0;fillColor=#EEEEEE;strokeColor=#000000;strokeWidth=1.5;fontColor=#000000;fontSize=13;fontStyle=1;align=left;spacingLeft=13;verticalAlign=middle;html=1;shadow=0;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="17.31" width="62.138642857142855" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="[Authentication, OTP, balance, or limit check fails]" plantUmlId="grpcond_4" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" plantUmlBaseValue="[Authentication, OTP, balance, or limit check fails]" id="TgTziPrXvUSxa3XX-cSn-73">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-71" style="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="15" width="290.71288571428573" x="75.1386" y="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="grpelse_5" plantUmlBaseStyle="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1;dashed=1;dashPattern=2 2;fontFamily=Arial;exitX=0;exitY=0.19;exitDx=0;exitDy=0;curved=0;rounded=0;endSize=6;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-74">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-71" source="TgTziPrXvUSxa3XX-cSn-71" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1;dashed=1;dashPattern=2 2;fontFamily=Arial;exitX=0;exitY=0.19;exitDx=0;exitDy=0;curved=0;rounded=0;endSize=6;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint y="47.62000000000003" as="sourcePoint" />
+              <mxPoint x="700.790757142857" y="47.62000000000003" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="[Risk decision == PASS]" plantUmlId="grpelselbl_6" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" plantUmlBaseValue="[Risk decision == PASS]" id="TgTziPrXvUSxa3XX-cSn-75">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-71" style="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="15" width="143.50185000000002" x="3" y="46.62" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="grpelse_7" plantUmlBaseStyle="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1;dashed=1;dashPattern=2 2;fontFamily=Arial;exitX=0;exitY=0.597;exitDx=0;exitDy=0;curved=0;rounded=0;endSize=6;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-76">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-71" source="TgTziPrXvUSxa3XX-cSn-71" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1;dashed=1;dashPattern=2 2;fontFamily=Arial;exitX=0;exitY=0.597;exitDx=0;exitDy=0;curved=0;rounded=0;endSize=6;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint y="149.51000000000002" as="sourcePoint" />
+              <mxPoint x="700.790757142857" y="149.51000000000002" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="[Manual review required]" plantUmlId="grpelselbl_8" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" plantUmlBaseValue="[Manual review required]" id="TgTziPrXvUSxa3XX-cSn-77">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-71" style="text;html=1;fontColor=#000000;fontSize=11;fontStyle=1;align=left;verticalAlign=middle;fontFamily=Arial;part=1;" vertex="1">
+            <mxGeometry height="15" width="150.10310714285714" x="3" y="148.51" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;1&lt;/b&gt; submitInternalTransfer(destinationAccount, amount)" plantUmlId="msg_9" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;1&lt;/b&gt; submitInternalTransfer(destinationAccount, amount)" id="TgTziPrXvUSxa3XX-cSn-78">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-67" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-70">
+            <mxGeometry relative="1" x="-0.078" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="168.75" />
+              </Array>
+              <mxPoint x="29.973100000000002" y="168.75" as="sourcePoint" />
+              <mxPoint x="417.84274999999985" y="168.75" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;2&lt;/b&gt; promptOTPChallenge()" plantUmlId="msg_10" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;2&lt;/b&gt; promptOTPChallenge()" id="TgTziPrXvUSxa3XX-cSn-79">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-67">
+            <mxGeometry relative="1" x="0.512" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="198.06" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="198.06" as="sourcePoint" />
+              <mxPoint x="29.973100000000002" y="198.06" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;3&lt;/b&gt; submitOTP(otpCode)" plantUmlId="msg_11" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;3&lt;/b&gt; submitOTP(otpCode)" id="TgTziPrXvUSxa3XX-cSn-80">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-67" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-70">
+            <mxGeometry relative="1" x="-0.594" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="227.37" />
+              </Array>
+              <mxPoint x="29.973100000000002" y="227.37" as="sourcePoint" />
+              <mxPoint x="417.84274999999985" y="227.37" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="msg_12" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-81">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-70">
+            <mxGeometry relative="1" as="geometry">
+              <Array as="points">
+                <mxPoint x="455.84274999999985" y="271.99" />
+                <mxPoint x="455.84274999999985" y="284.99" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="271.99" as="sourcePoint" />
+              <mxPoint x="417.84274999999985" y="284.99" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;4&lt;/b&gt; authenticateSession(), verifyOTP(),&lt;br&gt;checkBalanceAndDailyLimit(), evaluateRiskRules()" plantUmlId="msglbl_13" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" plantUmlBaseValue="&lt;b&gt;4&lt;/b&gt; authenticateSession(), verifyOTP(),&lt;br&gt;checkBalanceAndDailyLimit(), evaluateRiskRules()" id="TgTziPrXvUSxa3XX-cSn-82">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-81" style="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="33.620000000000005" relative="1" width="315.19395000000003" x="-1" as="geometry">
+              <mxPoint x="7.751" y="-35.619" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;5&lt;/b&gt; returnError(reason)" plantUmlId="msg_14" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;5&lt;/b&gt; returnError(reason)" id="TgTziPrXvUSxa3XX-cSn-83">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-67">
+            <mxGeometry relative="1" x="0.569" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="338.61" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="338.61" as="sourcePoint" />
+              <mxPoint x="29.973100000000002" y="338.61" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="msg_15" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-84">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-70">
+            <mxGeometry relative="1" as="geometry">
+              <Array as="points">
+                <mxPoint x="455.84274999999985" y="398.19" />
+                <mxPoint x="455.84274999999985" y="411.19" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="398.19" as="sourcePoint" />
+              <mxPoint x="417.84274999999985" y="411.19" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;6&lt;/b&gt; postDoubleEntryLedger(),&lt;br&gt;updateBalances(), recordAuditEvent()" plantUmlId="msglbl_16" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" plantUmlBaseValue="&lt;b&gt;6&lt;/b&gt; postDoubleEntryLedger(),&lt;br&gt;updateBalances(), recordAuditEvent()" id="TgTziPrXvUSxa3XX-cSn-85">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-84" style="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="33.620000000000005" relative="1" width="237.53677857142856" x="-1" as="geometry">
+              <mxPoint x="7.751" y="-35.619" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;7&lt;/b&gt; returnTransferReceipt(transferId, status=&amp;quot;COMPLETED&amp;quot;)" plantUmlId="msg_17" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;7&lt;/b&gt; returnTransferReceipt(transferId, status=&amp;quot;COMPLETED&amp;quot;)" id="TgTziPrXvUSxa3XX-cSn-86">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-67">
+            <mxGeometry relative="1" x="-0.023" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="440.5" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="440.5" as="sourcePoint" />
+              <mxPoint x="29.973100000000002" y="440.5" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="msg_18" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="TgTziPrXvUSxa3XX-cSn-87">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontFamily=Arial;fontSize=11;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-70">
+            <mxGeometry relative="1" as="geometry">
+              <Array as="points">
+                <mxPoint x="455.84274999999985" y="500.08" />
+                <mxPoint x="455.84274999999985" y="513.08" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="500.08" as="sourcePoint" />
+              <mxPoint x="417.84274999999985" y="513.08" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;8&lt;/b&gt; freezeAmount(), createHeldTransfer(),&lt;br&gt;openReviewCase(), recordAuditEvent()" plantUmlId="msglbl_19" plantUmlBaseStyle="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" plantUmlBaseValue="&lt;b&gt;8&lt;/b&gt; freezeAmount(), createHeldTransfer(),&lt;br&gt;openReviewCase(), recordAuditEvent()" id="TgTziPrXvUSxa3XX-cSn-88">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-87" style="text;html=1;fontColor=#000000;fontSize=13;align=left;verticalAlign=middle;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="33.620000000000005" relative="1" width="256.94800714285725" x="-1" as="geometry">
+              <mxPoint x="7.751" y="-35.619" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="&lt;b&gt;9&lt;/b&gt; returnPendingReview(transferId, caseId, status=&amp;quot;HELD&amp;quot;)" plantUmlId="msg_20" plantUmlBaseStyle="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="&lt;b&gt;9&lt;/b&gt; returnPendingReview(transferId, caseId, status=&amp;quot;HELD&amp;quot;)" id="TgTziPrXvUSxa3XX-cSn-89">
+          <mxCell edge="1" parent="TgTziPrXvUSxa3XX-cSn-1" source="TgTziPrXvUSxa3XX-cSn-70" style="endArrow=classic;endFill=1;endSize=9;html=1;edgeStyle=sequenceEdgeStyle;libavoidRouting=0;curved=0;rounded=0;strokeColor=#334155;strokeWidth=1;fontColor=#000000;fontSize=13;verticalAlign=bottom;labelBackgroundColor=none;dashed=1;dashPattern=2 2;fontFamily=Arial;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="TgTziPrXvUSxa3XX-cSn-67">
+            <mxGeometry relative="1" x="-0.022" as="geometry">
+              <Array as="points">
+                <mxPoint x="224" y="542.39" />
+              </Array>
+              <mxPoint x="417.84274999999985" y="542.39" as="sourcePoint" />
+              <mxPoint x="29.973100000000002" y="542.39" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <UserObject label="UC-01 — Execute Internal Transfer (System Sequence Diagram)" plantUmlId="title_23" plantUmlBaseStyle="text;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Arial;" plantUmlBaseValue="UC-01 — Execute Internal Transfer (System Sequence Diagram)" id="TgTziPrXvUSxa3XX-cSn-90">
+          <mxCell parent="TgTziPrXvUSxa3XX-cSn-1" style="text;html=1;fillColor=none;strokeColor=none;fontSize=14;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Arial;" vertex="1">
+            <mxGeometry height="24" width="462.51070000000027" x="150.7629999999998" y="30.000000000000004" as="geometry" />
+          </mxCell>
+        </UserObject>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
