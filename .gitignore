@@ -6,3 +6,8 @@ var/
 node_modules/
 dist/
 *.db
+.venv/
+venv/
+.DS_Store
+*.enc
+*.tsbuildinfo
