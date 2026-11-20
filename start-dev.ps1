@@ -1,4 +1,4 @@
-# صدى — تشغيل محلي بنقرة واحدة (Windows / PowerShell)
+﻿# صدى — تشغيل محلي بنقرة واحدة (Windows / PowerShell)
 # يفتح ثلاث نوافذ: Sada AI (8100) ، Backend (8000) ، Frontend (5173) ثم يفتح المتصفح.
 # المتطلبات: Python 3.11+ و Node 18+ على PATH. يستخدم SQLite فلا حاجة لـ PostgreSQL.
 
