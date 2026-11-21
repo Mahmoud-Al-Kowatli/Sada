@@ -1,0 +1,374 @@
+' -------------------- 11. CLASS DIAGRAM (v2 - corrected) --------------------
+' Paste this into the PlantUML block of CLASS_DIAGRAM.drawio to replace v1.
+' Changes vs v1: the four packages (Enumerations / Domain Model / Application Services /
+' Sada AI Microservice) are merged into ONE boundary, and the model is aligned with ERD v2.
+
+@startuml Sada_Class_Diagram_v2
+title Sada Digital Banking Platform — Domain & Service Class Diagram (v2)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam enum {
+  BackgroundColor #F1F5F9
+  BorderColor #334155
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #334155
+}
+
+package "Sada Digital Banking Platform" {
+
+  enum RoleName {
+    CUSTOMER
+    REVIEW_EMPLOYEE
+    SYSTEM_ADMIN
+  }
+
+  enum UserStatus {
+    ACTIVE
+    SUSPENDED
+  }
+
+  enum AccountStatus {
+    ACTIVE
+    FROZEN
+    CLOSED
+  }
+
+  enum OtpStatus {
+    PENDING
+    USED
+    EXPIRED
+  }
+
+  enum TransferStatus {
+    HELD
+    COMPLETED
+    CANCELLED
+  }
+
+  enum TransactionType {
+    TRANSFER
+    DEPOSIT
+    WITHDRAWAL
+    REVERSAL
+  }
+
+  enum EntryType {
+    DEBIT
+    CREDIT
+  }
+
+  enum RequestType {
+    RAISE_LIMIT
+    RELEASE_HELD
+    UPDATE_CONTACT
+  }
+
+  enum TicketStatus {
+    SUBMITTED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+  }
+
+  enum ReviewCopyStatus {
+    RETAINED
+    DELETED
+  }
+
+  enum AudioQualityStatus {
+    SUFFICIENT
+    INSUFFICIENT_QUALITY
+    INVALID
+  }
+
+  enum AssessmentStatus {
+    COMPLETED
+    INSUFFICIENT_QUALITY
+    INVALID_AUDIO
+    UNAVAILABLE
+  }
+
+  enum CaseStatus {
+    OPEN
+    IN_REVIEW
+    ACCEPTED
+    REJECTED
+  }
+
+  class User {
+    +userId : UUID
+    +fullName : String
+    +email : String
+    -passwordHash : String
+    +status : UserStatus
+    +createdAt : DateTime
+    +hasRole(role : RoleName) : Boolean
+  }
+
+  class Role {
+    +roleId : int
+    +roleName : RoleName
+  }
+
+  class OtpChallenge {
+    +otpId : UUID
+    -challengeHash : String
+    +purpose : String
+    +expiresAt : DateTime
+    +verifiedAt : DateTime
+    +status : OtpStatus
+    +createdAt : DateTime
+    +verify(code : String) : Boolean
+    +isExpired() : Boolean
+  }
+
+  class BankAccount {
+    +accountId : UUID
+    +accountNumber : String
+    +currency : String
+    +availableBalance : Decimal
+    +frozenBalance : Decimal
+    +dailyLimit : Decimal
+    +status : AccountStatus
+    +createdAt : DateTime
+    +freezeAmount(amount : Decimal) : void
+    +unfreezeAmount(amount : Decimal) : void
+    +debit(amount : Decimal) : void
+    +credit(amount : Decimal) : void
+  }
+
+  class Transfer {
+    +transferId : UUID
+    +reference : String
+    +amount : Decimal
+    +note : String
+    +status : TransferStatus
+    +createdAt : DateTime
+    +completedAt : DateTime
+    +markHeld() : void
+    +markCompleted() : void
+    +markCancelled() : void
+  }
+
+  class LedgerTransaction {
+    +ledgerTxId : UUID
+    +transactionType : TransactionType
+    +status : String
+    +reversalOfLedgerTxId : UUID
+    +createdAt : DateTime
+    +postedAt : DateTime
+    +isBalanced() : Boolean
+  }
+
+  class LedgerEntry {
+    +entryId : UUID
+    +entryType : EntryType
+    +amount : Decimal
+    +createdAt : DateTime
+  }
+
+  class SupportTicket {
+    +ticketId : UUID
+    +reference : String
+    +relatedTransferId : UUID
+    +requestType : RequestType
+    +description : String
+    +status : TicketStatus
+    +createdAt : DateTime
+    +updateStatus(status : TicketStatus) : void
+  }
+
+  class AudioFile {
+    +audioId : UUID
+    +storageReference : String
+    +fileFormat : String
+    +fileSizeBytes : long
+    +durationSeconds : Decimal
+    +reviewCopyStatus : ReviewCopyStatus
+    +retentionExpiresAt : DateTime
+    +deletedAt : DateTime
+    +createdAt : DateTime
+    +markDeleted() : void
+  }
+
+  class AudioAssessment {
+    +assessmentId : UUID
+    +status : AssessmentStatus
+    +spoofScore : Decimal
+    +threshold : Decimal
+    +qualityStatus : AudioQualityStatus
+    +modelVersion : String
+    +preprocessVersion : String
+    +processingTimeMs : int
+    +assessedAt : DateTime
+    +isSuspicious() : Boolean
+  }
+
+  class ReviewCase {
+    +caseId : UUID
+    +reference : String
+    +status : CaseStatus
+    +triggeredRules : String
+    +riskScore : Decimal
+    +decision : String
+    +decisionRationale : String
+    +createdAt : DateTime
+    +reviewedAt : DateTime
+    +claim(reviewerId : UUID) : void
+    +recordDecision(decision : String, rationale : String) : void
+  }
+
+  class SystemSetting {
+    +settingId : UUID
+    +settingKey : String
+    +settingValue : String
+    +updatedByUserId : UUID
+    +updatedAt : DateTime
+  }
+
+  class AuditLog {
+    +auditId : UUID
+    +eventType : String
+    +entityType : String
+    +entityId : UUID
+    +eventDetails : String
+    +createdAt : DateTime
+  }
+
+  class AuthService {
+    +authenticate(email : String, password : String) : SessionToken
+    +generateOtp(userId : UUID, purpose : String) : OtpChallenge
+    +verifyOtp(userId : UUID, otpId : UUID, code : String) : Boolean
+  }
+
+  class TransferService {
+    +executeInternalTransfer(sourceId : UUID, destId : UUID, amount : Decimal, otpCode : String) : Transfer
+    +releaseHeldTransfer(transferId : UUID) : void
+    +cancelHeldTransfer(transferId : UUID) : void
+  }
+
+  class LedgerService {
+    +postDoubleEntry(transfer : Transfer) : LedgerTransaction
+    +holdAmount(accountId : UUID, amount : Decimal) : void
+    +releaseHold(accountId : UUID, amount : Decimal) : void
+    +reverseTransaction(ledgerTxId : UUID, reason : String) : LedgerTransaction
+  }
+
+  class RiskEngine {
+    +evaluateTransferRisk(transfer : Transfer, account : BankAccount) : RiskDecision
+    +evaluateSupportRisk(ticket : SupportTicket, assessment : AudioAssessment) : RiskDecision
+  }
+
+  class SupportTicketService {
+    +submitSensitiveRequest(customerId : UUID, accountId : UUID, type : RequestType, audio : Binary) : SupportTicket
+  }
+
+  class CaseManagementService {
+    +listOpenCases() : List<ReviewCase>
+    +getCaseDetails(caseId : UUID) : ReviewCase
+    +claimCase(caseId : UUID, reviewerId : UUID) : ReviewCase
+    +submitDecision(caseId : UUID, reviewerId : UUID, decision : String, rationale : String) : ReviewCase
+  }
+
+  class AuditService {
+    +appendEvent(actorId : UUID, eventType : String, entityType : String, entityId : UUID, details : String) : AuditLog
+  }
+
+  class SadaAIServiceClient {
+    +requestAssessment(ticketId : UUID, audioBytes : Binary) : AudioAssessment
+  }
+
+  class AudioAssessmentAPI {
+    +analyzeAudio(ticketId : UUID, file : Binary) : AssessmentResponse
+  }
+
+  class AudioValidator {
+    +validateHeaderAndFormat(filePath : String) : Boolean
+    +assessQuality(filePath : String) : AudioQualityStatus
+  }
+
+  class AudioPreprocessor {
+    +convertToMono16kHz(filePath : String) : Signal
+    +segmentWindows(signal : Signal, windowSec : float) : List<Window>
+  }
+
+  class DeepfakeClassifier {
+    +modelVersion : String
+    +threshold : Decimal
+    +predictSpoofScore(windows : List<Window>) : Decimal
+  }
+}
+
+' -------- Domain relationships --------
+User "1" -- "1..*" Role : has >
+User "1" -- "0..*" BankAccount : owns >
+User "1" -- "0..*" OtpChallenge : receives >
+User "1" -- "0..*" AuditLog : triggers >
+User "0..1" -- "0..*" SystemSetting : updates >
+
+BankAccount "1" -- "0..*" Transfer : source/dest >
+User "1" -- "0..*" Transfer : initiates >
+Transfer "1" -- "0..*" LedgerTransaction : posts >
+LedgerTransaction "1" *-- "2..*" LedgerEntry : contains >
+BankAccount "1" -- "0..*" LedgerEntry : affects >
+LedgerTransaction "0..1" -- "0..1" LedgerTransaction : reverses >
+
+User "1" -- "0..*" SupportTicket : submits >
+BankAccount "1" -- "0..*" SupportTicket : relates to >
+Transfer "0..1" -- "0..*" SupportTicket : related to >
+SupportTicket "1" *-- "0..*" AudioFile : attaches >
+AudioFile "1" *-- "0..*" AudioAssessment : evaluated by >
+
+SupportTicket "1" -- "0..1" ReviewCase : escalates to >
+Transfer "1" -- "0..1" ReviewCase : escalates to >
+User "0..1" -- "0..*" ReviewCase : assigned to >
+
+' -------- Service dependencies --------
+AuthService ..> OtpChallenge : issues
+TransferService ..> AuthService : uses
+TransferService ..> RiskEngine : evaluates with
+TransferService ..> LedgerService : posts via
+TransferService ..> CaseManagementService : opens case
+TransferService ..> AuditService : logs via
+
+SupportTicketService ..> AuthService : uses
+SupportTicketService ..> SadaAIServiceClient : requests assessment
+SupportTicketService ..> RiskEngine : evaluates with
+SupportTicketService ..> CaseManagementService : opens case
+SupportTicketService ..> AuditService : logs via
+
+CaseManagementService ..> LedgerService : releases/cancels via
+CaseManagementService ..> AuditService : logs via
+
+SadaAIServiceClient ..> AudioAssessmentAPI : HTTP/REST
+AudioAssessmentAPI ..> AudioValidator : validates with
+AudioAssessmentAPI ..> AudioPreprocessor : preprocesses with
+AudioAssessmentAPI ..> DeepfakeClassifier : infers with
+
+note bottom of SadaAIServiceClient
+  Process boundary: this is the ONLY coupling between the
+  platform and Sada AI - one HTTP call. On timeout or 5xx the
+  client returns status = UNAVAILABLE and the Risk Engine
+  still decides, so no use case depends on the AI being up.
+end note
+
+note bottom of LedgerEntry
+  A posted transaction holds at least TWO entries and
+  SUM(DEBIT) = SUM(CREDIT) > 0. Postings are immutable;
+  corrections go through reverseTransaction().
+end note
+
+note bottom of ReviewCase
+  Exactly one subject per case: either a SupportTicket or a
+  Transfer, never both and never neither.
+end note
+
+@enduml

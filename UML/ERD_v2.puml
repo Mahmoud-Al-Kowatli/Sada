@@ -1,0 +1,238 @@
+' -------------------- 10. ERD (v2 - corrected) --------------------
+' Paste this into the PlantUML block of ERDE.drawio to replace v1.
+' Conventions applied (see docs/ERD_REVIEW.md):
+'   1. FK column name = [role_]<referenced PK name>, verbatim.
+'   2. Every varchar has a length; money is decimal(18,2); scores are decimal(5,4).
+'   3. Every status column is CHECK-constrained, never free text.
+'   4. Every FK is indexed unless it leads the PK.
+'   5. Business keys (references) are UNIQUE.
+'   6. No fact is stored in two tables.
+
+@startuml Sada_ERD_v2
+title Sada Digital Banking Platform — Entity Relationship Diagram (v2)
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #334155
+}
+
+package "Sada Digital Banking Platform" {
+
+entity "USER" as User {
+  * user_id : UUID <<PK>>
+  --
+  full_name : varchar(120) <<NN>>
+  email : varchar(150) <<UQ, NN>>
+  password_hash : varchar(255) <<NN>>
+  status : varchar(20) <<NN, CK: ACTIVE|SUSPENDED>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "ROLE" as Role {
+  * role_id : int <<PK>>
+  --
+  role_name : varchar(40) <<UQ, NN>>
+}
+
+entity "USER_ROLE" as UserRole {
+  * user_id : UUID <<PK, FK -> USER.user_id>>
+  * role_id : int <<PK, FK -> ROLE.role_id, IX>>
+  --
+  assigned_at : timestamptz <<NN>>
+}
+
+entity "OTP_CHALLENGE" as OTP {
+  * otp_id : UUID <<PK>>
+  --
+  user_id : UUID <<FK -> USER.user_id, IX, NN>>
+  challenge_hash : varchar(255) <<NN>>
+  purpose : varchar(40) <<NN>>
+  expires_at : timestamptz <<NN>>
+  verified_at : timestamptz <<NULL>>
+  status : varchar(20) <<NN, CK: PENDING|USED|EXPIRED>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "BANK_ACCOUNT" as Account {
+  * account_id : UUID <<PK>>
+  --
+  customer_user_id : UUID <<FK -> USER.user_id, IX, NN>>
+  account_number : varchar(34) <<UQ, NN>>
+  currency : char(3) <<NN>>
+  available_balance : decimal(18,2) <<NN, CK: >= 0>>
+  frozen_balance : decimal(18,2) <<NN, CK: >= 0>>
+  daily_limit : decimal(18,2) <<NN, CK: > 0>>
+  status : varchar(20) <<NN, CK: ACTIVE|FROZEN|CLOSED>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "TRANSFER" as Transfer {
+  * transfer_id : UUID <<PK>>
+  --
+  reference : varchar(24) <<UQ, NN>>
+  source_account_id : UUID <<FK -> BANK_ACCOUNT.account_id, IX, NN>>
+  destination_account_id : UUID <<FK -> BANK_ACCOUNT.account_id, IX, NN>>
+  initiated_by_user_id : UUID <<FK -> USER.user_id, IX, NN>>
+  amount : decimal(18,2) <<NN, CK: > 0>>
+  note : varchar(140) <<NULL>>
+  status : varchar(20) <<NN, CK: HELD|COMPLETED|CANCELLED>>
+  created_at : timestamptz <<NN>>
+  completed_at : timestamptz <<NULL>>
+}
+
+entity "LEDGER_TRANSACTION" as LedgerTx {
+  * ledger_tx_id : UUID <<PK>>
+  --
+  transfer_id : UUID <<FK -> TRANSFER.transfer_id, IX, NULL>>
+  reversal_of_ledger_tx_id : UUID <<FK -> LEDGER_TRANSACTION.ledger_tx_id, UQ, NULL>>
+  transaction_type : varchar(30) <<NN, CK: TRANSFER|DEPOSIT|WITHDRAWAL|REVERSAL>>
+  status : varchar(20) <<NN, CK: POSTED>>
+  created_at : timestamptz <<NN>>
+  posted_at : timestamptz <<NULL>>
+}
+
+entity "LEDGER_ENTRY" as Entry {
+  * entry_id : UUID <<PK>>
+  --
+  ledger_tx_id : UUID <<FK -> LEDGER_TRANSACTION.ledger_tx_id, IX, NN>>
+  account_id : UUID <<FK -> BANK_ACCOUNT.account_id, IX, NN>>
+  entry_type : varchar(10) <<NN, CK: DEBIT|CREDIT>>
+  amount : decimal(18,2) <<NN, CK: > 0>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "SUPPORT_TICKET" as Ticket {
+  * ticket_id : UUID <<PK>>
+  --
+  reference : varchar(24) <<UQ, NN>>
+  customer_user_id : UUID <<FK -> USER.user_id, IX, NN>>
+  account_id : UUID <<FK -> BANK_ACCOUNT.account_id, IX, NN>>
+  related_transfer_id : UUID <<FK -> TRANSFER.transfer_id, IX, NULL>>
+  request_type : varchar(50) <<NN, CK: RAISE_LIMIT|RELEASE_HELD|UPDATE_CONTACT>>
+  description : text <<NN>>
+  status : varchar(30) <<NN, CK: SUBMITTED|PENDING_REVIEW|APPROVED|REJECTED>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "AUDIO_FILE" as Audio {
+  * audio_id : UUID <<PK>>
+  --
+  ticket_id : UUID <<FK -> SUPPORT_TICKET.ticket_id, IX, NN>>
+  storage_reference : varchar(500) <<NN>>
+  file_format : varchar(10) <<NN, CK: wav|flac>>
+  file_size_bytes : bigint <<NN, CK: > 0>>
+  duration_seconds : decimal(5,2) <<NULL>>
+  review_copy_status : varchar(20) <<NN, CK: RETAINED|DELETED>>
+  retention_expires_at : timestamptz <<NULL>>
+  deleted_at : timestamptz <<NULL>>
+  created_at : timestamptz <<NN>>
+}
+
+entity "AUDIO_ASSESSMENT" as Assessment {
+  * assessment_id : UUID <<PK>>
+  --
+  audio_id : UUID <<FK -> AUDIO_FILE.audio_id, IX, NN>>
+  status : varchar(30) <<NN, CK: COMPLETED|INSUFFICIENT_QUALITY|INVALID_AUDIO|UNAVAILABLE>>
+  spoof_score : decimal(5,4) <<NULL, CK: 0..1>>
+  threshold : decimal(5,4) <<NULL>>
+  quality_status : varchar(30) <<NN>>
+  model_version : varchar(80) <<NN>>
+  preprocess_version : varchar(40) <<NN>>
+  processing_time_ms : int <<NN>>
+  assessed_at : timestamptz <<NN>>
+}
+
+entity "REVIEW_CASE" as ReviewCase {
+  * case_id : UUID <<PK>>
+  --
+  reference : varchar(24) <<UQ, NN>>
+  ticket_id : UUID <<FK -> SUPPORT_TICKET.ticket_id, UQ, NULL>>
+  transfer_id : UUID <<FK -> TRANSFER.transfer_id, UQ, NULL>>
+  assigned_reviewer_user_id : UUID <<FK -> USER.user_id, IX, NULL>>
+  status : varchar(20) <<NN, CK: OPEN|IN_REVIEW|ACCEPTED|REJECTED>>
+  triggered_rules : text <<NN>>
+  risk_score : decimal(5,2) <<NN>>
+  decision : varchar(20) <<NULL, CK: ACCEPTED|REJECTED>>
+  decision_rationale : text <<NULL>>
+  created_at : timestamptz <<NN>>
+  reviewed_at : timestamptz <<NULL>>
+}
+
+entity "SYSTEM_SETTING" as Setting {
+  * setting_id : UUID <<PK>>
+  --
+  setting_key : varchar(100) <<UQ, NN>>
+  setting_value : varchar(255) <<NN>>
+  updated_by_user_id : UUID <<FK -> USER.user_id, IX, NULL>>
+  updated_at : timestamptz <<NN>>
+}
+
+entity "AUDIT_LOG" as Audit {
+  * audit_id : UUID <<PK>>
+  --
+  actor_user_id : UUID <<FK -> USER.user_id, IX, NULL>>
+  event_type : varchar(80) <<NN, IX>>
+  entity_type : varchar(40) <<NN>>
+  entity_id : UUID <<NN>>
+  event_details : text <<NN>>
+  created_at : timestamptz <<NN, IX>>
+}
+
+}
+
+User ||--o{ UserRole
+Role ||--o{ UserRole
+User ||--o{ OTP : receives
+User ||--o{ Account : owns
+Account ||--o{ Transfer : source
+Account ||--o{ Transfer : destination
+User ||--o{ Transfer : initiates
+Transfer ||--o{ LedgerTx : posts
+LedgerTx ||--|{ Entry : contains
+Account ||--o{ Entry : affects
+LedgerTx |o--o| LedgerTx : reverses
+User ||--o{ Ticket : opens
+Account ||--o{ Ticket : concerns
+Transfer |o--o{ Ticket : related to
+Ticket ||--o{ Audio : attaches
+Audio ||--o{ Assessment : evaluated by
+Ticket ||--o| ReviewCase : may open
+Transfer ||--o| ReviewCase : may open
+User |o--o{ ReviewCase : reviews
+User |o--o{ Setting : updates
+User |o--o{ Audit : performs
+
+note bottom of ReviewCase
+  CK_case_exclusive_subject:
+  (ticket_id IS NOT NULL AND transfer_id IS NULL)
+  OR (ticket_id IS NULL AND transfer_id IS NOT NULL)
+  Exactly one subject per case.
+end note
+
+note bottom of Entry
+  A posted transaction has at least TWO entries and
+  SUM(amount WHERE DEBIT) = SUM(amount WHERE CREDIT) > 0.
+  Crow's foot cannot express the 2..* minimum, so it is
+  enforced by CK + the Ledger Service.
+end note
+
+note bottom of Transfer
+  CK_transfer_distinct_accounts:
+  source_account_id <> destination_account_id
+end note
+
+note bottom of Audit
+  (entity_type, entity_id) is an intentional polymorphic
+  soft reference - no FK is possible. Composite index on
+  (entity_type, entity_id) is required.
+end note
+
+@enduml
